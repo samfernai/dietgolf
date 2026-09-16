@@ -1,0 +1,12 @@
+{
+  "name": "Diet Golf",
+  "short_name": "Diet Golf",
+  "description": "Play your week like a round of golf.",
+  "start_url": "/play",
+  "display": "standalone",
+  "background_color": "#00563B",
+  "theme_color": "#006747",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

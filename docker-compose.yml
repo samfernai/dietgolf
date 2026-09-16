@@ -1,0 +1,20 @@
+# Local Postgres for development: `docker compose up -d`.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dietgolf
+      POSTGRES_PASSWORD: dietgolf
+      POSTGRES_DB: dietgolf
+    ports:
+      - "5432:5432"
+    volumes:
+      - dietgolf-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dietgolf"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  dietgolf-data:

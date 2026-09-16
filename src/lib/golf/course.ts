@@ -1,0 +1,161 @@
+import { addDays, prettyWeekRange, weekStart } from "@/lib/time";
+
+/** A fixed hole on every Diet Golf course: one day of the week. */
+export type HoleSpec = {
+  /** 0 = Monday … 6 = Sunday. */
+  dayIndex: number;
+  day: string;
+  short: string;
+  par: number;
+  strokeIndex: number;
+  /** Friday, Saturday and Sunday — the hardest stretch of the week. */
+  amenCorner: boolean;
+};
+
+/**
+ * The course never changes shape: seven holes, one per day, with the pars and
+ * stroke indexes fixed so scores are comparable week to week.
+ */
+export const HOLES: readonly HoleSpec[] = [
+  { dayIndex: 0, day: "Monday", short: "Mon", par: 4, strokeIndex: 7, amenCorner: false },
+  { dayIndex: 1, day: "Tuesday", short: "Tue", par: 4, strokeIndex: 6, amenCorner: false },
+  { dayIndex: 2, day: "Wednesday", short: "Wed", par: 5, strokeIndex: 5, amenCorner: false },
+  { dayIndex: 3, day: "Thursday", short: "Thu", par: 5, strokeIndex: 3, amenCorner: false },
+  { dayIndex: 4, day: "Friday", short: "Fri", par: 4, strokeIndex: 2, amenCorner: true },
+  { dayIndex: 5, day: "Saturday", short: "Sat", par: 5, strokeIndex: 1, amenCorner: true },
+  { dayIndex: 6, day: "Sunday", short: "Sun", par: 3, strokeIndex: 4, amenCorner: true },
+] as const;
+
+export const COURSE_PAR = HOLES.reduce((total, hole) => total + hole.par, 0); // 30
+
+export const AMEN_CORNER_PAR = HOLES.filter((h) => h.amenCorner).reduce((t, h) => t + h.par, 0);
+
+export function holeSpec(dayIndex: number): HoleSpec {
+  const hole = HOLES[dayIndex];
+  if (!hole) throw new Error(`No hole for day index ${dayIndex}`);
+  return hole;
+}
+
+/* ------------------------------------------------------------------ *
+ * Weekly course generation
+ *
+ * A fresh course appears every Monday. The layout is derived entirely
+ * from the week key, so every player sees the same course and it can be
+ * recomputed from scratch at any time.
+ * ------------------------------------------------------------------ */
+
+/** Deterministic 32-bit hash, so a week key always yields the same course. */
+export function hashString(value: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/** mulberry32 — small, fast, and stable across runtimes. */
+export function seededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const COURSE_FIRST = [
+  "Magnolia", "Amen", "Bramble", "Cedar", "Firethorn", "Camellia", "Azalea",
+  "Redbud", "Holly", "Juniper", "Dogwood", "Pampas", "Nandina", "Carolina",
+  "Sawgrass", "Whistling", "Brambleberry", "Peachtree", "Hazel", "Rye",
+];
+
+const COURSE_SECOND = [
+  "National", "Ridge", "Park", "Downs", "Hollow", "Links", "Bay",
+  "Common", "Meadows", "Point", "Valley", "Hill", "Fields", "Rise",
+];
+
+const HOLE_NAMES = [
+  "Tea Olive", "Pink Dogwood", "Flowering Peach", "Flowering Crab Apple",
+  "Magnolia", "Juniper", "Pampas", "Yellow Jasmine", "Carolina Cherry",
+  "Camellia", "White Dogwood", "Golden Bell", "Azalea", "Chinese Fir",
+  "Firethorn", "Redbud", "Nandina", "Holly", "Wild Olive", "Sweet Bay",
+  "Silver Birch", "Hawthorn", "Bluebell", "Foxglove", "Wisteria", "Laurel",
+  "Cowslip", "Honeysuckle", "Bramble", "Sorrel",
+];
+
+function pickDistinct<T>(pool: readonly T[], count: number, rnd: () => number): T[] {
+  const remaining = [...pool];
+  const chosen: T[] = [];
+  for (let i = 0; i < count && remaining.length > 0; i++) {
+    chosen.push(remaining.splice(Math.floor(rnd() * remaining.length), 1)[0]);
+  }
+  return chosen;
+}
+
+function yardageFor(par: number, rnd: () => number): number {
+  const ranges: Record<number, [number, number]> = {
+    3: [155, 205],
+    4: [345, 465],
+    5: [495, 590],
+  };
+  const [min, max] = ranges[par] ?? [400, 450];
+  return Math.round((min + rnd() * (max - min)) / 5) * 5;
+}
+
+export type GeneratedHole = HoleSpec & {
+  name: string;
+  yards: number;
+  /** Seed for the hole map: dogleg, bunkers, water and tree placement. */
+  designSeed: number;
+  date: string;
+};
+
+export type GeneratedCourse = {
+  weekKey: string;
+  name: string;
+  weekStart: string;
+  dateRange: string;
+  par: number;
+  seed: number;
+  holes: GeneratedHole[];
+};
+
+export function generateCourse(key: string): GeneratedCourse {
+  const seed = hashString(`diet-golf::${key}`);
+  const rnd = seededRandom(seed);
+  const first = COURSE_FIRST[Math.floor(rnd() * COURSE_FIRST.length)];
+  const second = COURSE_SECOND[Math.floor(rnd() * COURSE_SECOND.length)];
+  const names = pickDistinct(HOLE_NAMES, HOLES.length, rnd);
+  const start = weekStart(key);
+
+  return {
+    weekKey: key,
+    name: `${first} ${second}`,
+    weekStart: start,
+    dateRange: prettyWeekRange(key),
+    par: COURSE_PAR,
+    seed,
+    holes: HOLES.map((hole, i) => ({
+      ...hole,
+      name: names[i] ?? `Hole ${i + 1}`,
+      yards: yardageFor(hole.par, rnd),
+      designSeed: hashString(`${key}::${hole.dayIndex}`),
+      date: addDays(start, hole.dayIndex),
+    })),
+  };
+}
+
+/** URL-friendly day slugs: `/play/mon` … `/play/sun`. */
+export const DAY_SLUGS = HOLES.map((hole) => hole.short.toLowerCase());
+
+export function dayIndexFromSlug(slug: string): number | null {
+  const index = DAY_SLUGS.indexOf(slug.toLowerCase());
+  return index === -1 ? null : index;
+}
+
+export function slugForDay(dayIndex: number): string {
+  return DAY_SLUGS[dayIndex] ?? DAY_SLUGS[0];
+}

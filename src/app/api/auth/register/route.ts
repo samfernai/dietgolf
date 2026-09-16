@@ -1,0 +1,46 @@
+import { NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { players } from "@/lib/db/schema";
+import {
+  bagTagFor,
+  hashPin,
+  startSession,
+  toHandle,
+  validateName,
+  validatePin,
+} from "@/lib/auth";
+import { clampHandicap } from "@/lib/golf/scoring";
+import { currentWeekKey, ensureCourse } from "@/lib/game";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(request: Request) {
+  const body = await request.json().catch(() => null);
+  const name = typeof body?.name === "string" ? body.name.trim() : "";
+  const pin = typeof body?.pin === "string" ? body.pin : "";
+  const handicap = clampHandicap(Number(body?.handicap ?? 0));
+
+  const nameError = validateName(name) ?? validatePin(pin);
+  if (nameError) return NextResponse.json({ error: nameError }, { status: 400 });
+
+  const handle = toHandle(name);
+  const [existing] = await db.select().from(players).where(eq(players.handle, handle)).limit(1);
+  if (existing) {
+    return NextResponse.json(
+      { error: "Someone is already playing under that name. Sign in instead." },
+      { status: 409 },
+    );
+  }
+
+  const tag = bagTagFor(handle);
+  const [player] = await db
+    .insert(players)
+    .values({ name, handle, pinHash: hashPin(pin), handicap, ...tag })
+    .returning();
+
+  // Make sure this week's course exists so the new player has somewhere to play.
+  await ensureCourse(currentWeekKey());
+  await startSession(player.id);
+  return NextResponse.json({ ok: true, player: { id: player.id, name: player.name } });
+}

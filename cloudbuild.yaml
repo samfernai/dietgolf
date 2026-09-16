@@ -1,0 +1,55 @@
+# Build the container, push it to Artifact Registry and roll it out to Cloud Run.
+#
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions=_REGION=europe-west2,_INSTANCE=PROJECT:REGION:INSTANCE
+#
+# The database URL and session secret live in Secret Manager; see
+# docs/DEPLOY_GOOGLE_CLOUD.md.
+
+substitutions:
+  _REGION: europe-west2
+  _SERVICE: diet-golf
+  _REPO: diet-golf
+  # Cloud SQL connection name: PROJECT_ID:REGION:INSTANCE_ID
+  _INSTANCE: ""
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+images:
+  - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}"
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:latest"
+      - "."
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "--all-tags", "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - "${_SERVICE}"
+      - "--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}"
+      - "--region=${_REGION}"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+      - "--port=8080"
+      - "--min-instances=0"
+      - "--max-instances=4"
+      - "--cpu=1"
+      - "--memory=512Mi"
+      - "--add-cloudsql-instances=${_INSTANCE}"
+      - "--set-secrets=DATABASE_URL=diet-golf-database-url:latest,SESSION_SECRET=diet-golf-session-secret:latest"
+      - "--set-env-vars=APP_TIMEZONE=Europe/London"

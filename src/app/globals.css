@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@theme {
+  /* Masters green — the jacket, and the deeper screen variant. */
+  --color-masters-50: #eaf3ef;
+  --color-masters-100: #cfe4da;
+  --color-masters-200: #9ac9b6;
+  --color-masters-400: #2f8a6a;
+  --color-masters-500: #006747;
+  --color-masters-600: #00563b;
+  --color-masters-700: #01402d;
+  --color-masters-800: #022c20;
+  --color-masters-900: #012017;
+
+  /* Augusta yellow / gold. */
+  --color-gold-300: #fde68a;
+  --color-gold-400: #fad02e;
+  --color-gold-500: #e8b90c;
+  --color-gold-600: #b8900a;
+
+  /* Scoreboard cream and the classic red used for under-par numbers. */
+  --color-cream-50: #fbf8f0;
+  --color-cream-100: #f5f0e2;
+  --color-cream-200: #e7dfc9;
+  --color-cream-300: #d6cbae;
+  --color-under: #c8102e;
+
+  --font-display: ui-serif, Georgia, "Times New Roman", serif;
+}
+
+:root {
+  --surface: #ffffff;
+  --page: var(--color-cream-100);
+  --ink: #14261f;
+  --muted: #5d6b63;
+  --line: var(--color-cream-300);
+  color-scheme: light;
+}
+
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    --surface: #06281d;
+    --page: #041b14;
+    --ink: #eef5f0;
+    --muted: #9db3a7;
+    --line: #0d4130;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --surface: #06281d;
+  --page: #041b14;
+  --ink: #eef5f0;
+  --muted: #9db3a7;
+  --line: #0d4130;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--page);
+  color: var(--ink);
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Keep the bottom tab bar clear of the iOS home indicator. */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+}
+
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* The board flips a digit when a score changes, like the manual boards. */
+@keyframes flip-in {
+  from {
+    transform: rotateX(-90deg);
+    opacity: 0;
+  }
+  to {
+    transform: rotateX(0);
+    opacity: 1;
+  }
+}
+.flip-in {
+  animation: flip-in 260ms ease-out;
+  transform-origin: top center;
+}
+
+@keyframes trail-draw {
+  from {
+    stroke-dashoffset: var(--trail-length, 400);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-in,
+  [class*="animate-"] {
+    animation: none !important;
+  }
+}
