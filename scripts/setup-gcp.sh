@@ -186,7 +186,34 @@ gcloud run deploy "$SERVICE" \
   --set-secrets="DATABASE_URL=${SECRET_DATABASE_URL}:latest,SESSION_SECRET=${SECRET_SESSION}:latest" \
   --set-env-vars="APP_TIMEZONE=${APP_TIMEZONE}"
 
+# --------------------------------------------------------- public access ---
+# The deploy asks for this too, but the binding can fail on its own while the
+# revision goes live, which leaves a working service that 403s every visitor.
+step "Public access"
+if gcloud run services add-iam-policy-binding "$SERVICE" --region="$REGION" \
+     --member=allUsers --role=roles/run.invoker --quiet >/dev/null 2>&1; then
+  info "Anyone with the link can reach it."
+else
+  printf '\n\033[1;33m    Could not open the service to the public.\033[0m\n'
+  cat <<'WARN'
+    Players will get 403 until this is fixed.
+
+    This is nearly always the "Domain restricted sharing" organisation policy,
+    which blocks allUsers. Lift it for this project in the console:
+
+      IAM & Admin -> Organization Policies -> Domain restricted sharing
+      -> Manage policy -> override for this project -> Allow all
+
+    You need the Organization Policy Administrator role to change it. Re-run
+    this script afterwards.
+WARN
+fi
+
 URL="$(gcloud run services describe "$SERVICE" --region="$REGION" --format='value(status.url)')"
+# Cloud Run is moving to SERVICE-PROJECTNUMBER.REGION.run.app addresses, and a
+# service can answer on both the new and the legacy one. Show whatever it has.
+OTHER_URLS="$(gcloud run services describe "$SERVICE" --region="$REGION" \
+  --format='value(status.urls)' 2>/dev/null | tr ';' '\n' | grep -v "^${URL}$" | grep . || true)"
 
 step "Done"
 cat <<SUMMARY
@@ -194,6 +221,10 @@ cat <<SUMMARY
     Diet Golf is live at:
 
         $URL
+${OTHER_URLS:+
+    Also reachable at:
+
+$(printf '        %s\n' $OTHER_URLS)}
 
     The container applied the database migrations on boot, so the course is
     already open. Register the first player and tee off.
