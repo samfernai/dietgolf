@@ -36,6 +36,13 @@ step()  { printf '\n\033[1;32m==>\033[0m \033[1m%s\033[0m\n' "$1"; }
 info()  { printf '    %s\n' "$1"; }
 die()   { printf '\n\033[1;31mError:\033[0m %s\n' "$1" >&2; exit 1; }
 
+[ -f Dockerfile ] && [ -f package.json ] && grep -q '"name": "diet-golf"' package.json 2>/dev/null \
+  || die "Run this from the root of the Diet Golf repository — 'gcloud run deploy --source .' builds whatever directory you are standing in, and from anywhere else it quietly falls back to Buildpacks and ships the wrong thing.
+
+    git clone https://github.com/samfernai/dietgolf.git
+    cd dietgolf
+    ./scripts/setup-gcp.sh"
+
 command -v gcloud >/dev/null || die "The gcloud CLI is not installed. See https://cloud.google.com/sdk/docs/install"
 gcloud auth list --filter=status:ACTIVE --format='value(account)' | grep -q . \
   || die "Not signed in. Run: gcloud auth login"
@@ -158,7 +165,7 @@ for secret in "$SECRET_DATABASE_URL" "$SECRET_SESSION"; do
   info "$COMPUTE_SA can read $secret"
 done
 
-for role in roles/cloudsql.client roles/cloudbuild.builds.builder; do
+for role in roles/cloudsql.client roles/cloudbuild.builds.builder roles/storage.objectViewer roles/artifactregistry.writer roles/logging.logWriter; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" \
     --member="serviceAccount:${COMPUTE_SA}" --role="$role" --quiet >/dev/null
   info "$COMPUTE_SA granted $role"
