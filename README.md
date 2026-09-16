@@ -98,14 +98,24 @@ use PIN `1234`.
 
 ## Deploying
 
-See **[docs/DEPLOY_GOOGLE_CLOUD.md](docs/DEPLOY_GOOGLE_CLOUD.md)** for a
-step-by-step Cloud Run + Cloud SQL setup. The short version:
+`scripts/setup-gcp.sh` sets up Google Cloud from nothing — project, billing,
+APIs, Cloud SQL, secrets, IAM and the first deploy — and is safe to re-run:
 
 ```bash
-gcloud run deploy diet-golf --source . --region=europe-west2 --allow-unauthenticated
+gcloud auth login
+export BILLING_ACCOUNT=XXXXXX-XXXXXX-XXXXXX
+./scripts/setup-gcp.sh
 ```
 
-The container applies pending migrations on boot, so a deploy is all it takes.
+After that, a deploy is just:
+
+```bash
+gcloud run deploy diet-golf --source . --region=europe-west2
+```
+
+The container applies pending migrations on boot, so that is all it takes.
+**[docs/DEPLOY_GOOGLE_CLOUD.md](docs/DEPLOY_GOOGLE_CLOUD.md)** walks through the
+same steps individually, and covers domains, environment variables and costs.
 Any PostgreSQL works — Neon and Supabase's free tiers are fine if you would
 rather not run Cloud SQL.
 

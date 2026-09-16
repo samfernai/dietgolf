@@ -4,6 +4,40 @@ The app is a single container: a Next.js standalone server that talks to
 PostgreSQL. It runs happily on Cloud Run with Cloud SQL behind it, and scales to
 zero between rounds.
 
+## The fast path
+
+If you just want it running, [`scripts/setup-gcp.sh`](../scripts/setup-gcp.sh)
+does every step below in one go — project, billing, APIs, Cloud SQL, secrets,
+IAM and the first deploy:
+
+```bash
+gcloud auth login
+export BILLING_ACCOUNT=XXXXXX-XXXXXX-XXXXXX   # Billing → Account management
+./scripts/setup-gcp.sh
+```
+
+It is safe to re-run: every step checks for what it needs before creating it, so
+if something fails halfway (or you hit a quota) you can fix it and run the
+script again without duplicating anything. It prints the service URL when it
+finishes.
+
+Defaults are `PROJECT_ID=diet-golf`, `REGION=europe-west2` and
+`APP_TIMEZONE=Europe/London`. Override any of them by exporting first:
+
+```bash
+PROJECT_ID=diet-golf-prod REGION=us-central1 ./scripts/setup-gcp.sh
+```
+
+> Your billing account ID is deliberately not stored in this repository — it is
+> read from the environment. Project IDs are globally unique across all of
+> Google Cloud, so if `diet-golf` is already taken the script will tell you and
+> suggest a variation.
+
+The rest of this document is the same thing step by step, for when you want to
+understand or change what the script does.
+
+## Prerequisites
+
 Everything below assumes the `gcloud` CLI is installed and you are logged in:
 
 ```bash
