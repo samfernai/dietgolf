@@ -58,6 +58,9 @@ A few guardrails keep the cards honest:
   way to protect a score is never to stop filling the card in.
 - You cannot play a hole before you get to it.
 
+**[docs/HOW-TO-PLAY.md](docs/HOW-TO-PLAY.md)** is the players' handbook — the
+rules in full, written for the group rather than for whoever is deploying it.
+
 Leaderboards run in gross, net and Stableford. Handicaps are entered as ordinary
 18-hole numbers and scaled to this seven-hole course, handed out hardest hole
 first by stroke index — so a 24 handicapper has a real game against a scratch
