@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentPlayer } from "@/lib/auth";
 import { COURSE_PAR, HOLES } from "@/lib/golf/course";
+import { GRADE_TO_PAR, gradeLabel, gradeRange, gradesForPar } from "@/lib/golf/calories";
 import { currentWeekKey, ensureCourse } from "@/lib/game";
 import { prettyWeekRange } from "@/lib/time";
 
@@ -28,8 +29,8 @@ export default async function HomePage() {
           Diet Golf
         </h1>
         <p className="mt-4 text-base leading-relaxed text-white/85">
-          Play your week like a round of golf. Seven holes, one a day. Every meal is a
-          shot &mdash; and a glass of wine is a putt you probably just lipped out.
+          Play your week like a round of golf. Seven holes, one a day, scored on the
+          calories you eat against the calories you need.
         </p>
 
         <Link
@@ -78,20 +79,41 @@ export default async function HomePage() {
         <section className="mt-10 space-y-4 text-sm leading-relaxed text-white/85">
           <h2 className="font-display text-lg font-bold text-gold-400">How you score</h2>
           <p>
-            Rate breakfast, lunch, dinner, snacks and drinks as shots. A clean choice is
-            striped down the middle and takes a stroke <strong>off</strong> the hole. A
-            takeaway is in the trees. Everything adds up to a score against par.
+            Tell it your height, weight and age and it works out the calories you need to
+            hold your weight. Log what you eat and what you burn. Land near that line and
+            you make par; run a deficit and you go under it.
           </p>
-          <ul className="space-y-1.5">
-            <li>🎯 <strong>Striped it</strong> &mdash; one under</li>
-            <li>⛳ <strong>Fairway</strong> &mdash; level</li>
-            <li>🌾 <strong>Rough</strong> &mdash; one over</li>
-            <li>🌲 <strong>Trees</strong> &mdash; two over</li>
-            <li>💦 <strong>Water</strong> &mdash; three over</li>
-          </ul>
+          <div className="overflow-hidden rounded-xl border border-white/15 bg-masters-700/60">
+            <table className="w-full text-sm">
+              <thead className="bg-black/20 text-[11px] uppercase tracking-wider text-white/60">
+                <tr>
+                  <th className="px-3 py-2 text-left font-semibold">Score</th>
+                  <th className="px-3 py-2 text-right font-semibold">Net calories</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gradesForPar(4).map((grade) => (
+                  <tr key={grade} className="border-t border-white/10">
+                    <td className="px-3 py-2 font-semibold">
+                      {gradeLabel(4, grade)}
+                      <span className="ml-1.5 text-xs tabular-nums text-white/50">
+                        {GRADE_TO_PAR[grade] > 0 ? `+${GRADE_TO_PAR[grade]}` : GRADE_TO_PAR[grade] === 0 ? "E" : GRADE_TO_PAR[grade]}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">{gradeRange(grade, "male")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-white/60">
+            Women play off bands 15% tighter. A par 3 has no eagle &mdash; only an
+            albatross-sized deficit aces it.
+          </p>
           <p>
-            The leaderboard is live all week and a fresh course opens every Monday
-            morning.
+            Holes are checked through the day, at 10:00, 2:00 and 8:00 on a par 4, so the
+            shot tracker moves as you go. At midnight the hole settles. The leaderboard is
+            live all week and a fresh course opens every Monday.
           </p>
         </section>
 

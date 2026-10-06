@@ -2,13 +2,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import AppShell from "@/components/AppShell";
-import HoleMap from "@/components/HoleMap";
+import RoundNarrative, { HoleThumbs } from "@/components/RoundNarrative";
 import { ScorePill, StrokeBox } from "@/components/ScorePill";
 import { currentPlayer, toHandle } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { players } from "@/lib/db/schema";
 import { currentWeekKey, loadCard } from "@/lib/game";
-import { SLOT_OUTCOMES, SLOT_SPECS } from "@/lib/golf/shots";
 import { isValidWeekKey, prettyWeekRange } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
@@ -110,61 +109,13 @@ export default async function PlayerPage({
 
       <section className="mt-5">
         <h2 className="mb-2 text-[11px] font-bold uppercase tracking-wider muted">Their round</h2>
-        <ul className="grid grid-cols-4 gap-2">
-          {card.holes.map(({ hole, result, shots }) => (
-            <li key={hole.dayIndex} className="surface overflow-hidden rounded-xl p-1.5">
-              <HoleMap
-                seed={hole.designSeed}
-                par={hole.par}
-                outcomes={shots.map((shot) => shot.outcome)}
-                holedOut={result.status === "played"}
-                compact
-                className="h-24 w-full rounded-lg"
-              />
-              <div className="mt-1 flex items-center justify-between px-0.5">
-                <span className="text-[10px] font-bold uppercase">{hole.short}</span>
-                <span className="text-[10px] font-bold tabular-nums">{result.strokes ?? "–"}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <HoleThumbs holes={card.holes} linked={false} />
       </section>
 
-      {summary.shotsLogged > 0 && (
-        <section className="mt-6">
-          <h2 className="mb-2 text-[11px] font-bold uppercase tracking-wider muted">
-            Shot by shot
-          </h2>
-          <ul className="space-y-3">
-            {card.holes
-              .filter((entry) => entry.shots.length > 0)
-              .map(({ hole, result, shots }) => (
-                <li key={hole.dayIndex} className="surface rounded-xl p-3">
-                  <div className="flex items-baseline justify-between">
-                    <h3 className="text-sm font-bold">
-                      {hole.day} · {hole.name}
-                    </h3>
-                    <span className="text-xs font-semibold muted">
-                      {result.strokes} ({result.label})
-                    </span>
-                  </div>
-                  <ol className="mt-2 space-y-1.5">
-                    {shots.map((shot, i) => (
-                      <li key={shot.slot} className="text-xs leading-snug">
-                        <span className="font-bold tabular-nums muted">{i + 1}. </span>
-                        <span className="font-semibold">
-                          {SLOT_OUTCOMES[shot.slot][shot.outcome].title}
-                        </span>
-                        <span className="muted"> — {SLOT_SPECS[shot.slot].label}</span>
-                        {shot.note && <span className="block pl-4 italic muted">“{shot.note}”</span>}
-                      </li>
-                    ))}
-                  </ol>
-                </li>
-              ))}
-          </ul>
-        </section>
-      )}
+      <section className="mt-6">
+        <h2 className="mb-2 text-[11px] font-bold uppercase tracking-wider muted">Their round</h2>
+        <RoundNarrative holes={card.holes} />
+      </section>
 
       <p className="mt-6 text-center">
         <Link href="/leaderboard" className="text-sm font-semibold text-masters-500 underline">

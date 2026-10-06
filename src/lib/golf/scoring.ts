@@ -102,21 +102,35 @@ export function resolveStatus(date: string, today: string, hasShots: boolean): H
   return "no-return";
 }
 
-export function resultForHole(input: HoleInput, today: string, handicap: number): HoleResult {
+/**
+ * Builds a hole's line on the card from a score that has already been worked
+ * out — by the calorie engine for current weeks, or by the meal ratings for
+ * weeks played before the cutover. Everything downstream of here (handicapping,
+ * Stableford, no returns, totals) is the same either way.
+ */
+export function resultFromScore(input: {
+  dayIndex: number;
+  date: string;
+  status: HoleStatus;
+  /** Gross strokes, when the hole has been played. */
+  strokes: number | null;
+  /** Overrides the default "Birdie"/"Par" wording, e.g. "Hole in one". */
+  label?: string;
+  shotCount: number;
+}, handicap: number): HoleResult {
   const spec = holeSpec(input.dayIndex);
-  const status = resolveStatus(input.date, today, input.shots.length > 0);
   const received = shotsReceived(handicap, spec.strokeIndex);
 
-  let strokes: number | null = null;
-  let label = "";
-  if (status === "played") {
-    strokes = scoreHole(spec.par, input.shots)!;
-    label = scoreLabel(spec.par, strokes);
-  } else if (status === "no-return") {
+  let strokes = input.strokes;
+  let label = input.label ?? "";
+  if (input.status === "played" && strokes !== null) {
+    label = label || scoreLabel(spec.par, strokes);
+  } else if (input.status === "no-return") {
     strokes = spec.par + NO_RETURN_OVER_PAR;
     label = "No return";
   } else {
-    label = status === "pending" ? "In play" : "To come";
+    strokes = null;
+    label = input.status === "pending" ? "In play" : "To come";
   }
 
   return {
@@ -124,7 +138,7 @@ export function resultForHole(input: HoleInput, today: string, handicap: number)
     date: input.date,
     par: spec.par,
     strokeIndex: spec.strokeIndex,
-    status,
+    status: input.status,
     strokes,
     toPar: strokes === null ? null : strokes - spec.par,
     shotsReceived: received,
@@ -132,12 +146,28 @@ export function resultForHole(input: HoleInput, today: string, handicap: number)
     netToPar: strokes === null ? null : strokes - received - spec.par,
     // A no return scores nothing, exactly as it would on a real card.
     stableford:
-      strokes === null || status === "no-return"
+      strokes === null || input.status === "no-return"
         ? 0
         : stablefordPoints(spec.par, strokes, received),
     label,
-    shotCount: input.shots.length,
+    shotCount: input.shotCount,
   };
+}
+
+/** Scores a hole from v1's meal ratings. Only legacy weeks reach this. */
+export function resultForHole(input: HoleInput, today: string, handicap: number): HoleResult {
+  const spec = holeSpec(input.dayIndex);
+  const status = resolveStatus(input.date, today, input.shots.length > 0);
+  return resultFromScore(
+    {
+      dayIndex: input.dayIndex,
+      date: input.date,
+      status,
+      strokes: status === "played" ? scoreHole(spec.par, input.shots) : null,
+      shotCount: input.shots.length,
+    },
+    handicap,
+  );
 }
 
 export type RoundSummary = {
@@ -155,14 +185,9 @@ export type RoundSummary = {
   complete: boolean;
 };
 
-export function summariseRound(
-  inputs: HoleInput[],
-  today: string,
-  handicap: number,
-): RoundSummary {
-  const holes = [...inputs]
-    .sort((a, b) => a.dayIndex - b.dayIndex)
-    .map((input) => resultForHole(input, today, handicap));
+/** Totals a card from holes that have already been scored. */
+export function summarise(results: HoleResult[]): RoundSummary {
+  const holes = [...results].sort((a, b) => a.dayIndex - b.dayIndex);
 
   const counting = holes.filter((h) => h.strokes !== null);
   const gross = counting.reduce((t, h) => t + (h.strokes ?? 0), 0);
@@ -182,6 +207,15 @@ export function summariseRound(
     shotsLogged: holes.reduce((t, h) => t + h.shotCount, 0),
     complete: counting.length === HOLES.length,
   };
+}
+
+/** Totals a card scored from v1's meal ratings. Only legacy weeks reach this. */
+export function summariseRound(
+  inputs: HoleInput[],
+  today: string,
+  handicap: number,
+): RoundSummary {
+  return summarise(inputs.map((input) => resultForHole(input, today, handicap)));
 }
 
 /** "−2", "E", "+5" — the way a leaderboard writes it. */

@@ -19,6 +19,21 @@ export function today(now: Date = new Date(), timeZone: string = APP_TIMEZONE): 
   }).format(now);
 }
 
+/**
+ * Minutes since local midnight, which is what decides whether a checkpoint has
+ * come around yet. h23 so midnight is 0 rather than 24.
+ */
+export function minutesNow(now: Date = new Date(), timeZone: string = APP_TIMEZONE): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
+  return value("hour") * 60 + value("minute");
+}
+
 function parse(date: string): Date {
   if (!DATE_RE.test(date)) throw new Error(`Invalid date: ${date}`);
   const d = new Date(`${date}T00:00:00.000Z`);

@@ -6,7 +6,6 @@
  * each Monday's course.
  */
 import { seededRandom } from "./course";
-import { OUTCOME_SPECS, type OutcomeKey } from "./shots";
 
 export type Point = { x: number; y: number };
 
@@ -135,9 +134,16 @@ export function buildHoleLayout(seed: number, par: number): HoleLayout {
   };
 }
 
+/** Anything that can be plotted: a calorie checkpoint, or a v1 meal rating. */
+export type PlottableShot = {
+  /** How far up the hole this shot leaves the ball, relative to the others. */
+  advance: number;
+  /** Sideways spread from the centre line, in hole-map units. */
+  spread: number;
+};
+
 export type PlottedShot = {
   index: number;
-  outcome: OutcomeKey;
   x: number;
   y: number;
   /** Where the ball came from, for drawing the trail. */
@@ -146,35 +152,33 @@ export type PlottedShot = {
 };
 
 /**
- * Places each logged shot along the hole. Good shots cover more ground, so a
- * card full of fairways marches straight up the middle and a bad one zig-zags.
- * The ball always finishes in the hole — the last leg is drawn as the putt.
+ * Places each shot along the hole. Good shots cover more ground, so a day on
+ * pace marches straight up the middle and a bad one zig-zags. The ball always
+ * finishes in the hole — the last leg is drawn as the putt.
  */
-export function plotShots(layout: HoleLayout, outcomes: OutcomeKey[], seed: number): PlottedShot[] {
-  if (outcomes.length === 0) return [];
+export function plotShots(
+  layout: HoleLayout,
+  played: PlottableShot[],
+  seed: number,
+): PlottedShot[] {
+  if (played.length === 0) return [];
   const rnd = seededRandom(seed ^ 0x5f3759df);
 
-  const weights = outcomes.map((outcome) => OUTCOME_SPECS[outcome].advance);
-  const total = weights.reduce((a, b) => a + b, 0) || 1;
+  const total = played.reduce((sum, shot) => sum + shot.advance, 0) || 1;
 
   let travelled = 0;
   let from = layout.tee;
 
-  return outcomes.map((outcome, index) => {
-    travelled += weights[index];
+  return played.map((shot, index) => {
+    travelled += shot.advance;
     const t = (travelled / total) * 0.9;
     const base = layout.pointAt(t);
     const normal = layout.normalAt(t);
-    const spec = OUTCOME_SPECS[outcome];
     const dir = rnd() < 0.5 ? -1 : 1;
-    const offset = spec.spread === 0 ? 0 : dir * (spec.spread * (0.65 + rnd() * 0.5));
-    const point = {
-      x: base.x + normal.x * offset,
-      y: base.y + normal.y * offset,
-    };
+    const offset = shot.spread === 0 ? 0 : dir * (shot.spread * (0.65 + rnd() * 0.5));
+    const point = { x: base.x + normal.x * offset, y: base.y + normal.y * offset };
     const plotted: PlottedShot = {
       index,
-      outcome,
       x: point.x,
       y: point.y,
       fromX: from.x,

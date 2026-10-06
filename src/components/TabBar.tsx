@@ -7,6 +7,7 @@ const TABS = [
   { href: "/play", label: "Play", icon: "⛳" },
   { href: "/card", label: "Card", icon: "📋" },
   { href: "/leaderboard", label: "Board", icon: "🏆" },
+  { href: "/stats", label: "Stats", icon: "📊" },
   { href: "/settings", label: "You", icon: "🧢" },
 ];
 

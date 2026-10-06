@@ -1,13 +1,12 @@
 # Diet Golf ⛳
 
-Play your week like a round of golf. Seven holes, one a day, scored on what you
-ate and drank. Mobile-first, multiplayer, and the leaderboard resets with a
-brand new course every Monday morning.
+Play your week like a round of golf. Seven holes, one a day, scored on the
+calories you eat against the calories you need. Mobile-first, multiplayer, and
+the leaderboard resets with a brand new course every Monday morning.
 
-> Monday morning I ate a bowl of porridge with fruit — one straight down the
-> fairway. Lunch was pizza, so that's in the trees on the right. A healthy
-> chicken dinner recovered it back to the green, and then a glass of wine lipped
-> out the par putt. **Bogey 5.**
+> Tuesday. Porridge and berries for breakfast, a burger and chips at lunch, and a
+> bike ride that clawed back 620. Against the 2,118 my body needs, that is 1,308
+> under. **Birdie.**
 
 ## The course
 
@@ -24,47 +23,84 @@ The layout never changes, so scores are comparable week to week.
 | 7 | Sunday | 3 | 4 | **Amen Corner** |
 | | **Total** | **30** | | |
 
-The hole names, yardages and the drawn layout are generated fresh each Monday
-from the week's ISO key, so everybody plays the same course and it can be
-recomputed from scratch at any time.
+Each week borrows its identity from a PGA Tour event — the name, host course and
+location — while keeping these pars and stroke indexes, because those are what
+make scores comparable. The hole names, yardages and drawn layouts are generated
+from the week's ISO key, so everybody plays the same course.
 
 ## How scoring works
 
-Each day you play up to five shots, in order: **breakfast** off the tee,
-**lunch**, **dinner** as the approach, **snacks** around the green, and whatever
-you **drank** as the putt. Each one is rated, and the rating moves the hole score
-relative to par:
+Registration asks for height, weight, age and sex, and works out the calories you
+need to hold your weight (Mifflin-St Jeor, at a sedentary baseline — exercise is
+logged separately, so multiplying by an activity factor as well would count your
+bike ride twice).
 
-| | Rating | Strokes |
-| --- | ------ | ------- |
-| 🎯 | Striped it | −1 |
-| ⛳ | Fairway | level |
-| 🌾 | Rough | +1 |
-| 🌲 | Trees | +2 |
-| 💦 | Water | +3 |
+A hole is scored on the day's **net balance**: what you ate, minus what you
+burned, minus that maintenance figure.
 
-So a day of sensible choices is a par, one indulgence is a bogey, and a day
-where everything went in the water is the kind of number you don't write down.
-Every shot takes a note — "Hit one into the trees, as I had a burger for lunch"
-— and the shots are plotted on a drawn map of the hole.
+| Score | vs par | Net calories |
+| ----- | ------ | ------------ |
+| Albatross | −3 | −3,500 or lower *(par 3 only — it aces the hole)* |
+| Eagle | −2 | −2,000 or lower *(no eagle on a par 3)* |
+| Birdie | −1 | −1,000 to −1,999 |
+| Par | level | −999 to +250 |
+| Bogey | +1 | +251 to +1,500 |
+| Double bogey | +2 | +1,501 to +2,750 |
+| Triple bogey | +3 | +2,751 to +3,500 |
+| Snowman | +4 | +3,501 and above |
 
-A few guardrails keep the cards honest:
+Women play off bands 15% tighter — the same deficit is a larger share of a
+smaller maintenance, so the grades move in proportion. "Rather not say" uses the
+base table.
 
-- A hole can never be better than two under par, so a par 3 can be aced but an
-  albatross is off the table.
-- A hole can never be worse than six over par.
-- A day in the past with nothing logged is a **no return**, worth five over par.
-  That is deliberately worse than most honestly logged bad days, so the cheapest
-  way to protect a score is never to stop filling the card in.
+### Shots are played against the clock
+
+A hole is checked through the day, and the shot tracker moves as you log:
+
+| Par | Checkpoints |
+| --- | ----------- |
+| 3 | 10:00, 20:00 |
+| 4 | 10:00, 14:00, 20:00 |
+| 5 | 10:00, 14:00, 18:00, 21:00 |
+
+Maintenance is **pro-rated to the time of day**, so a checkpoint asks whether you
+are on pace right now rather than whether you have already eaten a full day's
+worth. Without that, every breakfast would read as an albatross. The hole settles
+at midnight on the full day's figures, which is why a hole can show a birdie at
+8pm and come back to a par.
+
+The checkpoint counts work out as `par − 1`, which conveniently makes the
+green-in-regulation shot the penultimate one on every hole.
+
+### Guardrails
+
+- A hole is never better than two under par, so a par 3 can be aced but an
+  albatross is off the table elsewhere.
+- A hole is never worse than six over par.
+- **A hole only counts once you close the day out.** Otherwise a day with just
+  breakfast logged would read as a 2,000-calorie deficit and an eagle.
+- A past day you never closed is a **no return**, worth five over par.
 - You cannot play a hole before you get to it.
 
-**[docs/HOW-TO-PLAY.md](docs/HOW-TO-PLAY.md)** is the players' handbook — the
-rules in full, written for the group rather than for whoever is deploying it.
+The deepest bands are deliberately hard to reach. A −3,500 day is about a pound
+of fat and is not meant as a daily target; it exists so an albatross stays rare.
 
 Leaderboards run in gross, net and Stableford. Handicaps are entered as ordinary
 18-hole numbers and scaled to this seven-hole course, handed out hardest hole
-first by stroke index — so a 24 handicapper has a real game against a scratch
-player.
+first by stroke index.
+
+### Statistics
+
+A PGA Tour-style stats page covers scoring average, driving distance, fairways
+and greens in regulation, scrambling, putts per round, strokes gained off the
+tee, on approach and putting, one-putt percentage, putting inside ten feet,
+3-putt avoidance, and a scoring average for each day of the week.
+
+None of these have a natural meaning in a calorie game, so each is given an
+explicit definition in `src/lib/golf/stats.ts` and the same wording is shown
+beside the number in the app. A "fairway hit" means you were on pace at 10:00,
+not that a ball landed anywhere. Strokes gained is measured against everyone else
+who played the same hole that week.
 
 ## Running it locally
 
@@ -131,9 +167,13 @@ src/
   lib/
     golf/
       course.ts         The fixed seven holes, plus weekly course generation
-      shots.ts          Meal slots, ratings and the narrative for each one
-      scoring.ts        Hole scores, handicapping, Stableford, round totals
+      calories.ts       Maintenance calories, the scoring bands, grades
+      checkpoints.ts    Shot timing, and grading a hole against the clock
+      stats.ts          The PGA Tour-style metrics, each defined in full
+      tournaments.ts    The weekly event each course borrows its name from
+      scoring.ts        Handicapping, Stableford, no returns, round totals
       layout.ts         Hole map geometry and where each shot lands
+      shots.ts          v1's meal ratings, kept so old weeks still render
     db/schema.ts        Drizzle schema
     game.ts             Loading and saving cards, leaderboards, season totals
     auth.ts             Name + PIN registration and signed session cookies
