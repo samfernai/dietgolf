@@ -120,8 +120,12 @@ Friday, Saturday and Sunday are the closing stretch — holes 16, 17 and 18 — 
 three that decide the tournament, and the three that contain every social
 occasion you have ever been invited to.
 
+Events fall on the weeks they are really played, so the Masters arrives in April
+and the Open in July. The Tour has off weeks, and so do you: those become the
+Diet Golf Invitational, played over a course of its own.
+
 Seventeen courses are mapped hole by hole, all four majors among them. A week
-whose event has not been mapped yet gets a generated layout instead, and says
+whose event has not been mapped yet gets a course of its own instead, and says
 so. Yardages are championship figures and move a little year to year; where no
 dependable one exists the app shows none rather than guess.
 

@@ -38,6 +38,13 @@ Events without a mapped course fall back to a generated seven-hole layout, which
 is obvious in the app rather than silently fabricated. Adding a venue is a block
 of pars in `src/lib/golf/venues.ts`.
 
+Events sit on the weeks they are actually played — the Masters in the second
+week of April, the PGA in mid-May, the Open in mid-July. The Tour has off weeks
+and so does this: a week with no event is the Diet Golf Invitational, played
+over a course of its own. The two majors with confirmed 2026 dates are exact;
+the rest follow the season's usual shape and may be a week out until the Tour
+publishes the official schedule, which is a one-line `isoWeek` change.
+
 ### What the data is, and is not
 
 - **Par is dependable.** It is stable year to year and sources agree on it. A
