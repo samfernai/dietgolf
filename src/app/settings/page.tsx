@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import SettingsForm from "@/components/SettingsForm";
 import { currentPlayer } from "@/lib/auth";
-import { COURSE_PAR, HOLES } from "@/lib/golf/course";
 import { NO_RETURN_OVER_PAR, shotsReceived } from "@/lib/golf/scoring";
 import { GRADE_TO_PAR, gradeLabel, gradeRange, gradesForPar } from "@/lib/golf/calories";
 import { checkpointsForPar } from "@/lib/golf/checkpoints";
@@ -103,15 +102,17 @@ export default async function SettingsPage() {
         <h2 className="text-sm font-bold">Your shots on this course</h2>
         <p className="mt-1 text-xs muted">
           A handicap of {player.handicap} scales to {Math.round((player.handicap * 7) / 18)} shots
-          over seven holes, handed out by stroke index. Course par is {COURSE_PAR}.
+          over seven holes, handed out by stroke index. This week is{" "}
+          {card.course.tournament ?? card.course.name}, par {card.course.par}.
         </p>
         <ul className="mt-3 grid grid-cols-7 gap-1 text-center">
-          {HOLES.map((hole) => (
+          {card.course.holes.map((hole) => (
             <li key={hole.dayIndex} className="rounded-lg border border-[color:var(--line)] py-1.5">
               <div className="text-[10px] font-bold uppercase">{hole.short}</div>
               <div className="text-sm font-bold tabular-nums">
                 {shotsReceived(player.handicap, hole.strokeIndex)}
               </div>
+              <div className="text-[9px] muted">par {hole.par}</div>
             </li>
           ))}
         </ul>

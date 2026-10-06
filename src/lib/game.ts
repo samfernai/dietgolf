@@ -189,22 +189,19 @@ export async function ensureCourse(key: string): Promise<CourseView> {
   const [existing] = await db.select().from(courses).where(eq(courses.weekKey, key)).limit(1);
   if (existing) return toCourseView(existing);
 
+  // The layout, pars and hole names all come from the generator, which reads
+  // the week's tournament and its mapped course.
   const generated = generateCourse(key);
   const event = tournamentForWeek(key);
-  // Where the host course has real hole names, use them.
-  const holes = generated.holes.map((hole, i) => ({
-    ...hole,
-    name: event.holeNames?.[i] ?? hole.name,
-  }));
 
   const [inserted] = await db
     .insert(courses)
     .values({
       weekKey: generated.weekKey,
-      name: event.course,
+      name: generated.name,
       weekStart: generated.weekStart,
       seed: generated.seed,
-      holes,
+      holes: generated.holes,
       tournament: event.name,
       tournamentCourse: event.course,
       tournamentLocation: event.location,
@@ -268,7 +265,13 @@ function buildHoleCards(
       return {
         hole: { ...hole, date },
         result: resultForHole(
-          { dayIndex: hole.dayIndex, date, shots: shotList },
+          {
+            dayIndex: hole.dayIndex,
+            date,
+            par: hole.par,
+            strokeIndex: hole.strokeIndex,
+            shots: shotList,
+          },
           today,
           data.handicap,
         ),
@@ -313,6 +316,8 @@ function buildHoleCards(
         {
           dayIndex: hole.dayIndex,
           date,
+          par: hole.par,
+          strokeIndex: hole.strokeIndex,
           status,
           strokes,
           label: status === "played" ? gradeLabel(hole.par, evaluation.grade) : undefined,

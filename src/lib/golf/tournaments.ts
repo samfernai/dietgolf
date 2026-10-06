@@ -1,25 +1,22 @@
 /**
  * The weekly tournament.
  *
- * Each week's course borrows its identity from a PGA Tour event — the name, the
- * host course and where it is. The holes themselves keep Diet Golf's own pars
- * and stroke indexes, because those are what make scores comparable from one
- * week to the next; the tournament supplies the character, not the card.
+ * Each week's course is a PGA Tour event. Where the host course is mapped hole
+ * by hole in `venues.ts`, the week is played over its real closing seven, with
+ * that course's real pars — so the shape of the week changes from one event to
+ * the next. Events without a mapped venue fall back to a generated layout.
  *
  * ---------------------------------------------------------------------------
- * ON ACCURACY: these are real events and their traditional host courses, listed
- * in roughly the order the season runs. The mapping of event to calendar week
- * is NOT the official 2026/2027 schedule — that is published by the Tour each
- * autumn and moves year to year. Events are assigned to weeks in order, so the
- * season reads correctly even though a given week may not match the real date.
+ * ON THE CALENDAR: these are real events and their host courses, listed in
+ * roughly the order the season runs. The mapping of event to calendar week is
+ * NOT the official schedule — the Tour publishes that each autumn and it moves
+ * year to year. Events fill the weeks in order, so the season reads correctly
+ * even though a given week may not match the real date.
  *
- * To pin it to the real schedule, give an entry an `isoWeek` and it will claim
- * that week of the year. Everything without one fills the remaining weeks in
- * order. Nothing else needs to change.
+ * To pin one to a real week, give it an `isoWeek`. Everything without one fills
+ * the remaining weeks in order.
  * ---------------------------------------------------------------------------
  */
-
-import { hashString } from "./course";
 
 export type Tournament = {
   name: string;
@@ -27,52 +24,50 @@ export type Tournament = {
   location: string;
   /** Pin this event to a week of the year (1–53). Optional. */
   isoWeek?: number;
-  /** Real hole names, where the course genuinely has them. */
-  holeNames?: string[];
+  /**
+   * Key into VENUES. When set, the week is played over that course's real
+   * holes. Without one the week falls back to a generated layout.
+   */
+  venue?: string;
+  /** Override which seven holes the week uses. Defaults to the closing 12–18. */
+  holes?: number[];
   /** Marks the four majors, which get a flash of gold in the UI. */
   major?: boolean;
 };
 
 export const TOURNAMENTS: Tournament[] = [
-  { name: "The Sentry", course: "Kapalua, Plantation Course", location: "Maui, Hawaii" },
+  { name: "The Sentry", course: "Kapalua, Plantation Course", location: "Maui, Hawaii", venue: "kapalua-plantation" },
   { name: "Sony Open in Hawaii", course: "Waialae Country Club", location: "Honolulu, Hawaii" },
   { name: "The American Express", course: "PGA West", location: "La Quinta, California" },
-  { name: "Farmers Insurance Open", course: "Torrey Pines", location: "San Diego, California" },
-  { name: "AT&T Pebble Beach Pro-Am", course: "Pebble Beach Golf Links", location: "Pebble Beach, California" },
-  { name: "WM Phoenix Open", course: "TPC Scottsdale", location: "Scottsdale, Arizona" },
-  { name: "The Genesis Invitational", course: "Riviera Country Club", location: "Pacific Palisades, California" },
+  { name: "Farmers Insurance Open", course: "Torrey Pines, South Course", location: "San Diego, California", venue: "torrey-pines-south" },
+  { name: "AT&T Pebble Beach Pro-Am", course: "Pebble Beach Golf Links", location: "Pebble Beach, California", venue: "pebble-beach" },
+  { name: "WM Phoenix Open", course: "TPC Scottsdale, Stadium Course", location: "Scottsdale, Arizona", venue: "tpc-scottsdale" },
+  { name: "The Genesis Invitational", course: "Riviera Country Club", location: "Pacific Palisades, California", venue: "riviera" },
   { name: "Cognizant Classic", course: "PGA National", location: "Palm Beach Gardens, Florida" },
-  { name: "Arnold Palmer Invitational", course: "Bay Hill Club & Lodge", location: "Orlando, Florida" },
-  { name: "The Players Championship", course: "TPC Sawgrass, Stadium Course", location: "Ponte Vedra Beach, Florida" },
+  { name: "Arnold Palmer Invitational", course: "Bay Hill Club & Lodge", location: "Orlando, Florida", venue: "bay-hill" },
+  { name: "The Players Championship", course: "TPC Sawgrass, Stadium Course", location: "Ponte Vedra Beach, Florida", venue: "tpc-sawgrass" },
   { name: "Valspar Championship", course: "Innisbrook, Copperhead Course", location: "Palm Harbor, Florida" },
   { name: "Texas Children's Houston Open", course: "Memorial Park Golf Course", location: "Houston, Texas" },
   { name: "Valero Texas Open", course: "TPC San Antonio", location: "San Antonio, Texas" },
-  {
-    name: "The Masters",
-    course: "Augusta National Golf Club",
-    location: "Augusta, Georgia",
-    major: true,
-    // Augusta is one of the few courses whose holes are genuinely named.
-    holeNames: ["Tea Olive", "Pink Dogwood", "Flowering Peach", "Magnolia", "Golden Bell", "Azalea", "Holly"],
-  },
-  { name: "RBC Heritage", course: "Harbour Town Golf Links", location: "Hilton Head, South Carolina" },
+  { name: "The Masters", course: "Augusta National Golf Club", location: "Augusta, Georgia", venue: "augusta-national", major: true },
+  { name: "RBC Heritage", course: "Harbour Town Golf Links", location: "Hilton Head, South Carolina", venue: "harbour-town" },
   { name: "Zurich Classic of New Orleans", course: "TPC Louisiana", location: "Avondale, Louisiana" },
-  { name: "Truist Championship", course: "Quail Hollow Club", location: "Charlotte, North Carolina" },
-  { name: "PGA Championship", course: "A rotating host", location: "United States", major: true },
-  { name: "Charles Schwab Challenge", course: "Colonial Country Club", location: "Fort Worth, Texas" },
-  { name: "The Memorial Tournament", course: "Muirfield Village", location: "Dublin, Ohio" },
+  { name: "Truist Championship", course: "Quail Hollow Club", location: "Charlotte, North Carolina", venue: "quail-hollow" },
+  { name: "PGA Championship", course: "Aronimink Golf Club", location: "Newtown Square, Pennsylvania", venue: "aronimink", major: true },
+  { name: "Charles Schwab Challenge", course: "Colonial Country Club", location: "Fort Worth, Texas", venue: "colonial" },
+  { name: "The Memorial Tournament", course: "Muirfield Village Golf Club", location: "Dublin, Ohio", venue: "muirfield-village" },
   { name: "RBC Canadian Open", course: "A rotating host", location: "Canada" },
-  { name: "U.S. Open", course: "A rotating host", location: "United States", major: true },
-  { name: "Travelers Championship", course: "TPC River Highlands", location: "Cromwell, Connecticut" },
+  { name: "U.S. Open", course: "Shinnecock Hills Golf Club", location: "Southampton, New York", venue: "shinnecock-hills", major: true },
+  { name: "Travelers Championship", course: "TPC River Highlands", location: "Cromwell, Connecticut", venue: "tpc-river-highlands" },
   { name: "Rocket Classic", course: "Detroit Golf Club", location: "Detroit, Michigan" },
   { name: "John Deere Classic", course: "TPC Deere Run", location: "Silvis, Illinois" },
   { name: "Genesis Scottish Open", course: "The Renaissance Club", location: "North Berwick, Scotland" },
-  { name: "The Open Championship", course: "A rotating links", location: "United Kingdom", major: true },
+  { name: "The Open Championship", course: "Royal Birkdale", location: "Southport, England", venue: "royal-birkdale", major: true },
   { name: "3M Open", course: "TPC Twin Cities", location: "Blaine, Minnesota" },
   { name: "Wyndham Championship", course: "Sedgefield Country Club", location: "Greensboro, North Carolina" },
   { name: "FedEx St. Jude Championship", course: "TPC Southwind", location: "Memphis, Tennessee" },
   { name: "BMW Championship", course: "A rotating host", location: "United States" },
-  { name: "Tour Championship", course: "East Lake Golf Club", location: "Atlanta, Georgia" },
+  { name: "Tour Championship", course: "East Lake Golf Club", location: "Atlanta, Georgia", venue: "east-lake" },
   { name: "Procore Championship", course: "Silverado Resort", location: "Napa, California" },
   { name: "Sanderson Farms Championship", course: "Country Club of Jackson", location: "Jackson, Mississippi" },
   { name: "Shriners Children's Open", course: "TPC Summerlin", location: "Las Vegas, Nevada" },
@@ -122,9 +117,4 @@ const SCHEDULE = buildSchedule();
 
 export function tournamentForWeek(weekKey: string): Tournament {
   return SCHEDULE.get(weekNumber(weekKey)) ?? TOURNAMENTS[TOURNAMENTS.length - 1];
-}
-
-/** Seed for the week's hole layouts, so each event's course looks its own. */
-export function tournamentSeed(weekKey: string): number {
-  return hashString(`${tournamentForWeek(weekKey).name}::${weekKey}`);
 }

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ScorePill } from "@/components/ScorePill";
 import type { Leaderboard, LeaderboardSort } from "@/lib/game";
-import { COURSE_PAR } from "@/lib/golf/course";
 import { prettyDate, shiftWeek } from "@/lib/time";
 
 const SORTS: { key: LeaderboardSort; label: string }[] = [
@@ -65,7 +64,7 @@ export default function LeaderboardView({
         >
           ← Last week
         </Link>
-        <span className="text-[11px] font-semibold muted">Par {COURSE_PAR}</span>
+        <span className="text-[11px] font-semibold muted">Par {board.course.par}</span>
         {isCurrentWeek ? (
           <span className="rounded-lg px-2.5 py-1.5 text-xs font-bold opacity-30">Next week →</span>
         ) : (

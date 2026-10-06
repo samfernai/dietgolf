@@ -111,6 +111,9 @@ export function resolveStatus(date: string, today: string, hasShots: boolean): H
 export function resultFromScore(input: {
   dayIndex: number;
   date: string;
+  /** The hole's own par — courses with a real venue vary week to week. */
+  par: number;
+  strokeIndex: number;
   status: HoleStatus;
   /** Gross strokes, when the hole has been played. */
   strokes: number | null;
@@ -118,15 +121,15 @@ export function resultFromScore(input: {
   label?: string;
   shotCount: number;
 }, handicap: number): HoleResult {
-  const spec = holeSpec(input.dayIndex);
-  const received = shotsReceived(handicap, spec.strokeIndex);
+  const { par, strokeIndex } = input;
+  const received = shotsReceived(handicap, strokeIndex);
 
   let strokes = input.strokes;
   let label = input.label ?? "";
   if (input.status === "played" && strokes !== null) {
-    label = label || scoreLabel(spec.par, strokes);
+    label = label || scoreLabel(par, strokes);
   } else if (input.status === "no-return") {
-    strokes = spec.par + NO_RETURN_OVER_PAR;
+    strokes = par + NO_RETURN_OVER_PAR;
     label = "No return";
   } else {
     strokes = null;
@@ -134,36 +137,41 @@ export function resultFromScore(input: {
   }
 
   return {
-    dayIndex: spec.dayIndex,
+    dayIndex: input.dayIndex,
     date: input.date,
-    par: spec.par,
-    strokeIndex: spec.strokeIndex,
+    par,
+    strokeIndex,
     status: input.status,
     strokes,
-    toPar: strokes === null ? null : strokes - spec.par,
+    toPar: strokes === null ? null : strokes - par,
     shotsReceived: received,
     netStrokes: strokes === null ? null : strokes - received,
-    netToPar: strokes === null ? null : strokes - received - spec.par,
+    netToPar: strokes === null ? null : strokes - received - par,
     // A no return scores nothing, exactly as it would on a real card.
     stableford:
       strokes === null || input.status === "no-return"
         ? 0
-        : stablefordPoints(spec.par, strokes, received),
+        : stablefordPoints(par, strokes, received),
     label,
     shotCount: input.shotCount,
   };
 }
 
 /** Scores a hole from v1's meal ratings. Only legacy weeks reach this. */
-export function resultForHole(input: HoleInput, today: string, handicap: number): HoleResult {
-  const spec = holeSpec(input.dayIndex);
+export function resultForHole(
+  input: HoleInput & { par: number; strokeIndex: number },
+  today: string,
+  handicap: number,
+): HoleResult {
   const status = resolveStatus(input.date, today, input.shots.length > 0);
   return resultFromScore(
     {
       dayIndex: input.dayIndex,
       date: input.date,
+      par: input.par,
+      strokeIndex: input.strokeIndex,
       status,
-      strokes: status === "played" ? scoreHole(spec.par, input.shots) : null,
+      strokes: status === "played" ? scoreHole(input.par, input.shots) : null,
       shotCount: input.shots.length,
     },
     handicap,
@@ -209,29 +217,11 @@ export function summarise(results: HoleResult[]): RoundSummary {
   };
 }
 
-/** Totals a card scored from v1's meal ratings. Only legacy weeks reach this. */
-export function summariseRound(
-  inputs: HoleInput[],
-  today: string,
-  handicap: number,
-): RoundSummary {
-  return summarise(inputs.map((input) => resultForHole(input, today, handicap)));
-}
-
 /** "−2", "E", "+5" — the way a leaderboard writes it. */
 export function formatToPar(toPar: number | null): string {
   if (toPar === null) return "–";
   if (toPar === 0) return "E";
   return toPar > 0 ? `+${toPar}` : `−${Math.abs(toPar)}`;
-}
-
-/** Empty shot list for every hole of the week — a card nobody has started. */
-export function blankCard(dates: string[]): HoleInput[] {
-  return HOLES.map((hole) => ({
-    dayIndex: hole.dayIndex,
-    date: dates[hole.dayIndex],
-    shots: [],
-  }));
 }
 
 export { orderShots };

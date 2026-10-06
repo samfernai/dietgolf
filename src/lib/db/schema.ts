@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { relations } from "drizzle-orm";
 import {
+  bigint,
   date,
   index,
   integer,
@@ -47,7 +48,9 @@ export const courses = pgTable("courses", {
   weekKey: text("week_key").primaryKey(),
   name: text("name").notNull(),
   weekStart: date("week_start").notNull(),
-  seed: integer("seed").notNull(),
+  // hashString returns an unsigned 32-bit value, which overflows a signed
+  // integer column for about half of all week keys.
+  seed: bigint("seed", { mode: "number" }).notNull(),
   /** The full seven-hole layout, frozen at the moment the course opened. */
   holes: jsonb("holes").$type<GeneratedHole[]>().notNull(),
 

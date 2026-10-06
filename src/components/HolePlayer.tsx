@@ -179,13 +179,18 @@ export default function HolePlayer({ card: initial, dayIndex }: { card: Card; da
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-baseline gap-2">
-              <span className="font-display text-2xl font-bold">Hole {dayIndex + 1}</span>
+              <span className="font-display text-2xl font-bold">
+                Hole {hole.holeNumber ?? dayIndex + 1}
+              </span>
               <span className="text-sm font-semibold muted">{hole.day}</span>
             </div>
+            {hole.holeNumber && (
+              <div className="text-xs font-semibold muted">{card.course.name}</div>
+            )}
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold muted">
               <span>Par {hole.par}</span>
               <span>S.I. {hole.strokeIndex}</span>
-              <span>{hole.yards} yds</span>
+              {hole.yards !== null && <span>{hole.yards} yds</span>}
               {result.shotsReceived > 0 && (
                 <span className="text-masters-500">
                   {result.shotsReceived} shot{result.shotsReceived > 1 ? "s" : ""} given
@@ -194,7 +199,7 @@ export default function HolePlayer({ card: initial, dayIndex }: { card: Card; da
             </div>
             {hole.amenCorner && (
               <span className="mt-2 inline-block rounded-full bg-gold-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-masters-800">
-                Amen Corner
+                {hole.holeNumber ? "Closing stretch" : "Amen Corner"}
               </span>
             )}
           </div>

@@ -74,7 +74,7 @@ export default async function StatsPage() {
                 <div className="text-sm font-bold tabular-nums">
                   {value === null ? "–" : value.toFixed(1)}
                 </div>
-                <div className="text-[9px] muted">par {hole.par}</div>
+
               </li>
             );
           })}

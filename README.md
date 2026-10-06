@@ -10,23 +10,47 @@ the leaderboard resets with a brand new course every Monday morning.
 
 ## The course
 
-The layout never changes, so scores are comparable week to week.
+Each week is a real PGA Tour event, played over that course's **real closing
+seven — holes 12 to 18**, with their real pars. Taking the finish rather than
+the start means the week ends on the holes the tournament is actually decided
+on, and it puts the famous ones where they belong: Sawgrass's island 17th on a
+Saturday, Augusta's Redbud on a Friday.
 
-| Hole | Day | Par | Stroke index | |
-| ---- | --- | --- | ------------ | --- |
-| 1 | Monday | 4 | 7 | |
-| 2 | Tuesday | 4 | 6 | |
-| 3 | Wednesday | 5 | 5 | |
-| 4 | Thursday | 5 | 3 | |
-| 5 | Friday | 4 | 2 | **Amen Corner** |
-| 6 | Saturday | 5 | 1 | **Amen Corner** |
-| 7 | Sunday | 3 | 4 | **Amen Corner** |
-| | **Total** | **30** | | |
+So Masters week is Golden Bell through Holly, par 28. The Players is par 27. The
+Sentry at Kapalua is par 30 and finishes on the 677-yard 18th. **The shape of
+the week changes with the tournament**, which is the trade for authenticity:
+scores within a week are directly comparable, across weeks less so.
 
-Each week borrows its identity from a PGA Tour event — the name, host course and
-location — while keeping these pars and stroke indexes, because those are what
-make scores comparable. The hole names, yardages and drawn layouts are generated
-from the week's ISO key, so everybody plays the same course.
+Seventeen courses are mapped hole by hole, including all four majors:
+
+| | |
+| --- | --- |
+| Augusta National | The Masters |
+| TPC Sawgrass | The Players |
+| Aronimink | PGA Championship |
+| Shinnecock Hills | U.S. Open |
+| Royal Birkdale | The Open |
+| Pebble Beach · Kapalua · Riviera · Torrey Pines South | West coast swing |
+| Bay Hill · Harbour Town · Quail Hollow · Colonial | Florida and the Carolinas |
+| Muirfield Village · TPC River Highlands · TPC Scottsdale · East Lake | Summer and the finish |
+
+Events without a mapped course fall back to a generated seven-hole layout, which
+is obvious in the app rather than silently fabricated. Adding a venue is a block
+of pars in `src/lib/golf/venues.ts`.
+
+### What the data is, and is not
+
+- **Par is dependable.** It is stable year to year and sources agree on it. A
+  test asserts every venue's eighteen holes add up to that course's published
+  par, so a mistyped hole cannot sit there unnoticed.
+- **Yardage is approximate and optional.** Championship yardages move every year
+  with tee placement — Augusta came back as both 7,475 and 7,555, each correct
+  for its year. Where no dependable tournament-tee figure was available the
+  field is simply absent and the app shows no yardage, rather than quoting a
+  member-tee number.
+- **Stroke index is derived** unless the course publishes one (Harbour Town
+  does). Otherwise the seven holes are ranked by how long each plays for its
+  par, which is the usual shape of difficulty.
 
 ## How scoring works
 
@@ -134,6 +158,7 @@ use PIN `1234`.
 | `npm run db:generate` | Generate a migration after changing the schema. |
 | `npm run db:migrate` | Apply pending migrations. |
 | `npm run db:seed` | Fill the current week with sample players. |
+| `npm run db:refresh-course` | Rebuild a week's course after mapping a new venue. Refuses once anyone has closed a hole out. |
 
 ## Deploying
 
@@ -170,7 +195,8 @@ src/
       calories.ts       Maintenance calories, the scoring bands, grades
       checkpoints.ts    Shot timing, and grading a hole against the clock
       stats.ts          The PGA Tour-style metrics, each defined in full
-      tournaments.ts    The weekly event each course borrows its name from
+      tournaments.ts    The weekly event, and which venue it is played over
+      venues.ts         Real tournament courses, hole by hole
       scoring.ts        Handicapping, Stableford, no returns, round totals
       layout.ts         Hole map geometry and where each shot lands
       shots.ts          v1's meal ratings, kept so old weeks still render

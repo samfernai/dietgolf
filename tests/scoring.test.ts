@@ -3,12 +3,13 @@ import { describe, it } from "node:test";
 import { COURSE_PAR, HOLES, generateCourse } from "../src/lib/golf/course";
 import {
   NO_RETURN_OVER_PAR,
+  resultForHole,
   formatToPar,
   scoreHole,
   scoreLabel,
   shotsReceived,
   stablefordPoints,
-  summariseRound,
+  summarise,
 } from "../src/lib/golf/scoring";
 import type { OutcomeKey } from "../src/lib/golf/shots";
 import {
@@ -153,8 +154,16 @@ describe("a round", () => {
     HOLES.map((hole) => ({
       dayIndex: hole.dayIndex,
       date: dates[hole.dayIndex],
+      par: hole.par,
+      strokeIndex: hole.strokeIndex,
       shots: shots(...(played[hole.dayIndex] ?? [])),
     }));
+
+  const summariseRound = (
+    holes: ReturnType<typeof card>,
+    today: string,
+    handicap: number,
+  ) => summarise(holes.map((hole) => resultForHole(hole, today, handicap)));
 
   it("reports live position through the holes played", () => {
     const summary = summariseRound(
@@ -172,7 +181,7 @@ describe("a round", () => {
   it("leaves holes still to come off the card entirely", () => {
     const summary = summariseRound(card({ 0: ["FAIRWAY"] }), dates[0], 0);
     assert.equal(summary.thru, 1);
-    assert.equal(summary.holes.filter((h) => h.status === "future").length, 6);
+    assert.equal(summary.holes.filter((hole) => hole.status === "future").length, 6);
   });
 
   it("marks today as in play until something is logged", () => {

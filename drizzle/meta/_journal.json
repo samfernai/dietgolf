@@ -15,6 +15,13 @@
       "when": 1791292707337,
       "tag": "0001_fixed_nocturne",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791294724139,
+      "tag": "0002_high_chronomancer",
+      "breakpoints": true
     }
   ]
 }

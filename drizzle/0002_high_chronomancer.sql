@@ -1,0 +1,1 @@
+ALTER TABLE "courses" ALTER COLUMN "seed" SET DATA TYPE bigint;

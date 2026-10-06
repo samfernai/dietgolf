@@ -1,4 +1,6 @@
 import { addDays, prettyWeekRange, weekStart } from "@/lib/time";
+import { tournamentForWeek } from "./tournaments";
+import { holesFor, venueFor } from "./venues";
 
 /** A fixed hole on every Diet Golf course: one day of the week. */
 export type HoleSpec = {
@@ -13,8 +15,9 @@ export type HoleSpec = {
 };
 
 /**
- * The course never changes shape: seven holes, one per day, with the pars and
- * stroke indexes fixed so scores are comparable week to week.
+ * The fallback week, used when the tournament's course has not been mapped
+ * hole by hole. Weeks with a real venue take their pars and stroke indexes
+ * from the course itself, so the shape varies.
  */
 export const HOLES: readonly HoleSpec[] = [
   { dayIndex: 0, day: "Monday", short: "Mon", par: 4, strokeIndex: 7, amenCorner: false },
@@ -105,9 +108,14 @@ function yardageFor(par: number, rnd: () => number): number {
   return Math.round((min + rnd() * (max - min)) / 5) * 5;
 }
 
-export type GeneratedHole = HoleSpec & {
+export type GeneratedHole = Omit<HoleSpec, "par" | "strokeIndex"> & {
+  par: number;
+  strokeIndex: number;
   name: string;
-  yards: number;
+  /** Null where no dependable tournament-tee figure was available. */
+  yards: number | null;
+  /** The hole's real number on the course, when the week has a mapped venue. */
+  holeNumber: number | null;
   /** Seed for the hole map: dogleg, bunkers, water and tree placement. */
   designSeed: number;
   date: string;
@@ -123,28 +131,61 @@ export type GeneratedCourse = {
   holes: GeneratedHole[];
 };
 
+/**
+ * Builds the week's course.
+ *
+ * Where the week's tournament has a mapped venue, the seven holes are that
+ * course's real closing stretch, with its real pars. Everything else — the
+ * drawn layout, the dogleg, the bunkering — is still generated from the week
+ * key so every player sees the same holes.
+ */
 export function generateCourse(key: string): GeneratedCourse {
   const seed = hashString(`diet-golf::${key}`);
   const rnd = seededRandom(seed);
+  const start = weekStart(key);
+  const event = tournamentForWeek(key);
+  const venue = venueFor(event.venue);
+
+  let holes: GeneratedHole[];
+
+  if (venue) {
+    const real = holesFor(venue, event.holes);
+    holes = HOLES.map((day, i) => ({
+      dayIndex: day.dayIndex,
+      day: day.day,
+      short: day.short,
+      amenCorner: day.amenCorner,
+      par: real[i].par,
+      strokeIndex: real[i].strokeIndex,
+      name: real[i].name ?? `Hole ${real[i].number}`,
+      yards: real[i].yards,
+      holeNumber: real[i].number,
+      designSeed: hashString(`${key}::${real[i].number}`),
+      date: addDays(start, day.dayIndex),
+    }));
+  } else {
+    const names = pickDistinct(HOLE_NAMES, HOLES.length, rnd);
+    holes = HOLES.map((day, i) => ({
+      ...day,
+      name: names[i] ?? `Hole ${i + 1}`,
+      yards: yardageFor(day.par, rnd),
+      holeNumber: null,
+      designSeed: hashString(`${key}::${day.dayIndex}`),
+      date: addDays(start, day.dayIndex),
+    }));
+  }
+
   const first = COURSE_FIRST[Math.floor(rnd() * COURSE_FIRST.length)];
   const second = COURSE_SECOND[Math.floor(rnd() * COURSE_SECOND.length)];
-  const names = pickDistinct(HOLE_NAMES, HOLES.length, rnd);
-  const start = weekStart(key);
 
   return {
     weekKey: key,
-    name: `${first} ${second}`,
+    name: venue?.name ?? `${first} ${second}`,
     weekStart: start,
     dateRange: prettyWeekRange(key),
-    par: COURSE_PAR,
+    par: holes.reduce((total, hole) => total + hole.par, 0),
     seed,
-    holes: HOLES.map((hole, i) => ({
-      ...hole,
-      name: names[i] ?? `Hole ${i + 1}`,
-      yards: yardageFor(hole.par, rnd),
-      designSeed: hashString(`${key}::${hole.dayIndex}`),
-      date: addDays(start, hole.dayIndex),
-    })),
+    holes,
   };
 }
 

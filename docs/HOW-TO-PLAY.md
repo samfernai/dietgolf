@@ -103,28 +103,27 @@ that an albatross stays as rare as it should be.
 
 ## 5. The course and the tournament
 
-The shape of the week never changes, so scores mean the same thing from one week
-to the next.
+Every week is a real PGA Tour event, and you play that course's **real closing
+seven — holes 12 to 18**, with their real pars.
 
-| Hole | Day | Par | S.I. | |
-| ---- | --- | --- | ---- | --- |
-| 1 | Monday | 4 | 7 | |
-| 2 | Tuesday | 4 | 6 | |
-| 3 | Wednesday | 5 | 5 | |
-| 4 | Thursday | 5 | 3 | |
-| 5 | Friday | 4 | 2 | **Amen Corner** |
-| 6 | Saturday | 5 | 1 | **Amen Corner** |
-| 7 | Sunday | 3 | 4 | **Amen Corner** |
-| | **Total** | **30** | | |
+Masters week is Golden Bell, Azalea, Chinese Fir, Firethorn, Redbud, Nandina and
+Holly: par 28, finishing on Augusta's 18th. The Players finishes through the
+island green at the 17th, which lands on a Saturday. The Sentry at Kapalua ends
+on the 677-yard 18th, the longest hole on tour.
 
-Each Monday the course takes its identity from a PGA Tour event — the name, the
-host course and where it is. The pars and stroke indexes stay put, because those
-are what let you compare this week with last. Masters week gets Augusta's real
-hole names; everywhere else the holes are named from the plant pool.
+**The shape of the week changes with the tournament.** A par 27 week at Sawgrass
+is a different test from a par 30 at Kapalua, so a level-par week means
+something slightly different each time. Within a week everyone plays exactly the
+same seven holes, which is what the leaderboard cares about.
 
-**Amen Corner** is Friday, Saturday and Sunday: the stretch that decides the
-week, and the stretch that contains every social occasion you have ever been
-invited to.
+Friday, Saturday and Sunday are the closing stretch — holes 16, 17 and 18 — the
+three that decide the tournament, and the three that contain every social
+occasion you have ever been invited to.
+
+Seventeen courses are mapped hole by hole, all four majors among them. A week
+whose event has not been mapped yet gets a generated layout instead, and says
+so. Yardages are championship figures and move a little year to year; where no
+dependable one exists the app shows none rather than guess.
 
 ## 6. Handicaps
 
@@ -202,7 +201,7 @@ measure against it stays blank rather than inventing a baseline.
 | Stableford | A points format that ignores disasters. Two points is a net par. |
 | In regulation | Reaching the green with two shots left for putting. |
 | Scrambling | Making par after missing the green. The art of getting away with it. |
-| Amen Corner | At Augusta, the three holes that decide the Masters. Here, the weekend. |
+| Closing stretch | The last three holes, where tournaments are won. Here, your weekend. |
 
 ## The instruction sheet
 
@@ -219,5 +218,5 @@ a par. A thousand under is a birdie. Two thousand under is an eagle.
 **The clock** — holes are checked at 10:00 and 20:00 on a par 3; 10:00, 14:00 and
 20:00 on a par 4; 10:00, 14:00, 18:00 and 21:00 on a par 5. Midnight settles it.
 
-**The week** — Mon 4, Tue 4, Wed 5, Thu 5, Fri 4, Sat 5, Sun 3. Par 30. Amen
-Corner is Fri–Sun. New course and new tournament every Monday.
+**The week** — a real tour event's closing seven, holes 12 to 18, with their
+real pars. The par total changes with the course. New tournament every Monday.
