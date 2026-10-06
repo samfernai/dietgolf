@@ -183,6 +183,36 @@ Then add the DNS records it prints. Cloud Run provisions the TLS certificate.
   If even that is too much, a free Neon or Supabase database works as well.
 - `--max-instances=4` caps runaway spend.
 
+## Running a script against the deployed database
+
+Cloud Run reaches Cloud SQL over a Unix socket that only exists inside the
+container, so a script run from Cloud Shell or your laptop needs two things the
+container has and you do not: the project's dependencies, and a route to the
+database.
+
+From a clone of the repo:
+
+```bash
+npm install                      # the scripts need devDependencies (tsx)
+
+# A local route to Cloud SQL, left running in the background.
+cloud-sql-proxy "$(gcloud sql instances describe diet-golf-db --format='value(connectionName)')" &
+
+# The password lives in Secret Manager, so take it from there.
+export DATABASE_URL="postgresql://dietgolf:$(gcloud secrets versions access latest --secret=diet-golf-db-password)@127.0.0.1:5432/dietgolf"
+
+npm run db:refresh-course        # …or any other db: script
+```
+
+If `cloud-sql-proxy` is not on the machine, install it with
+`gcloud components install cloud-sql-proxy`.
+
+Stop the proxy with `kill %1` when you are done.
+
+> `npm install` is the step that is easy to miss. A fresh clone has no
+> `node_modules`, and the `db:` scripts run TypeScript through `tsx`, which is a
+> dev dependency — without it you get `Cannot find package 'tsx'`.
+
 ## Running the migrations by hand
 
 Normally the container does it for you. If you want to run them yourself, from
