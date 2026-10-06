@@ -1,5 +1,5 @@
 import { addDays, prettyWeekRange, weekStart } from "@/lib/time";
-import { tournamentForWeek } from "./tournaments";
+import { isOffWeek, tournamentForWeek } from "./tournaments";
 import { holesFor, venueFor } from "./venues";
 
 /** A fixed hole on every Diet Golf course: one day of the week. */
@@ -178,9 +178,14 @@ export function generateCourse(key: string): GeneratedCourse {
   const first = COURSE_FIRST[Math.floor(rnd() * COURSE_FIRST.length)];
   const second = COURSE_SECOND[Math.floor(rnd() * COURSE_SECOND.length)];
 
+  // A real event keeps its real host course even when the holes have not been
+  // mapped — inventing a name for it would put the Sony Open somewhere that
+  // does not exist. Only the off week gets a made-up course.
+  const name = venue?.name ?? (isOffWeek(key) ? `${first} ${second}` : event.course);
+
   return {
     weekKey: key,
-    name: venue?.name ?? `${first} ${second}`,
+    name,
     weekStart: start,
     dateRange: prettyWeekRange(key),
     par: holes.reduce((total, hole) => total + hole.par, 0),

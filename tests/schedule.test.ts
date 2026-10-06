@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { OFF_WEEK, TOURNAMENTS, isOffWeek, tournamentForWeek } from "../src/lib/golf/tournaments";
 import { weekKey } from "../src/lib/time";
+import { generateCourse } from "../src/lib/golf/course";
 
 const week = (n: number) => `2026-W${String(n).padStart(2, "0")}`;
 
@@ -58,5 +59,23 @@ describe("the season schedule", () => {
     assert.ok(isOffWeek(week(41)));
     assert.equal(tournamentForWeek(week(41)).name, OFF_WEEK.name);
     assert.ok(!isOffWeek(week(15)));
+  });
+});
+
+describe("course names", () => {
+  it("keeps a real event at its real host course, mapped or not", () => {
+    // Waialae's holes are not mapped, but the Sony Open is still played there.
+    const sony = generateCourse(week(3));
+    assert.equal(sony.name, "Waialae Country Club");
+    assert.equal(sony.holes[0].holeNumber, null, "its holes are a stand-in");
+    // A mapped venue names itself.
+    assert.equal(generateCourse(week(15)).name, "Augusta National Golf Club");
+  });
+
+  it("only invents a course name for the off week", () => {
+    const off = generateCourse(week(41));
+    assert.ok(isOffWeek(week(41)));
+    assert.notEqual(off.name, OFF_WEEK.course);
+    assert.ok(off.name.length > 3);
   });
 });
